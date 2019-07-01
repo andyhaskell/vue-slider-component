@@ -36,6 +36,7 @@ const DEFAULT_SLIDER_SIZE = 4
   data() {
     return {
       control: null,
+      lastClickTime: 0,
     }
   },
   components: {
@@ -46,6 +47,7 @@ const DEFAULT_SLIDER_SIZE = 4
 })
 export default class VueSlider extends Vue {
   control!: Control
+  lastClickTime!: number
   states: State = new State(SliderState)
   // The width of the component is divided into one hundred, the width of each one.
   scale: number = 1
@@ -96,6 +98,9 @@ export default class VueSlider extends Vue {
 
   @Prop({ type: Boolean, default: true })
   clickable!: boolean
+
+  @Prop({ type: Boolean, default: false })
+  doubleClickable!: boolean
 
   // The duration of the slider slide, Unit second
   @Prop({ type: Number, default: 0.5 })
@@ -547,6 +552,18 @@ export default class VueSlider extends Vue {
   }
 
   private clickHandle(e: MouseEvent | TouchEvent) {
+    let oldLastClickTime = this.lastClickTime
+    this.lastClickTime = Date.now()
+
+    if (this.doubleClickable) {
+      if (Date.now() - oldLastClickTime < 300) {
+        this.setScale()
+        const pos = this.getPosByEvent(e)
+        this.$emit('double-click', pos)
+      }
+      return
+    }
+
     if (!this.clickable) {
       return false
     }
